@@ -536,6 +536,7 @@ fun NavigationComp(
                     onAlbumLongClick = albumsViewModel.onAlbumLongClick,
                     filterOptions = albumsViewModel.rememberFilters(),
                     onMoveAlbumToTrash = albumsViewModel::moveAlbumToTrash,
+                    onMoveAlbumsToTrash = albumsViewModel::moveAlbumsToTrash,
                     onIgnoreAlbum = albumsViewModel::addAlbumToIgnored,
                     onLockAlbum = onLockAlbumWithCheck,
                     onGroupClick = albumsViewModel.onGroupClick(eventHandler::navigate),

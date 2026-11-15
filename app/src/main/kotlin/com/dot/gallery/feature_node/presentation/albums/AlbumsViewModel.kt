@@ -141,6 +141,27 @@ class AlbumsViewModel @Inject constructor(
         }
     }
 
+    fun moveAlbumsToTrash(result: ActivityResultLauncher<IntentSenderRequest>, albums: List<Album>) {
+        val (cloud, local) = albums.partition { it.relativePath.startsWith("cloud/") }
+        cloud.forEach { moveAlbumToTrash(result, it) }
+        if (local.isEmpty()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            val data = local.flatMap { album ->
+                repository.getMediaByAlbumIds(
+                    album.sourceAlbumIds.toSet(),
+                    skipBatching = true
+                ).firstOrNull()?.data ?: emptyList()
+            }.distinctBy { it.id }
+            if (data.isEmpty()) return@launch
+            val trashEnabled = getTrashEnabled(context).firstOrNull() ?: SdkCompat.supportsTrash
+            if (trashEnabled && SdkCompat.supportsTrash) {
+                repository.trashMedia(result, data, true)
+            } else {
+                repository.deleteMedia(result, data)
+            }
+        }
+    }
+
     @Composable
     fun rememberFilters(): SnapshotStateList<FilterOption> {
         val lastValue by Settings.Album.rememberLastSort()

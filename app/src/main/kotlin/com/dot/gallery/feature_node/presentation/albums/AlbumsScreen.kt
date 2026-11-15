@@ -132,6 +132,9 @@ fun AlbumsScreen(
     onAlbumClick: (Album) -> Unit,
     onAlbumLongClick: (Album) -> Unit,
     onMoveAlbumToTrash: (ActivityResultLauncher<IntentSenderRequest>, Album) -> Unit,
+    onMoveAlbumsToTrash: (ActivityResultLauncher<IntentSenderRequest>, List<Album>) -> Unit = { launcher, list ->
+        list.forEach { onMoveAlbumToTrash(launcher, it) }
+    },
     onIgnoreAlbum: (Album) -> Unit,
     onLockAlbum: (Album) -> Unit,
     onGroupClick: (AlbumGroupWithAlbums) -> Unit = {},
@@ -254,17 +257,69 @@ fun AlbumsScreen(
         paddingValues = paddingValues,
         layoutDirection = LocalLayoutDirection.current,
     )
+    val selection = remember { com.dot.gallery.feature_node.presentation.albums.components.AlbumSelection() }
+    val selectionTrashResult = rememberActivityResult()
+    var showSelectionDelete by remember { androidx.compose.runtime.mutableStateOf(false) }
+    val selTrashEnabled by com.dot.gallery.core.Settings.Misc.rememberTrashEnabled()
+    androidx.activity.compose.BackHandler(enabled = selection.active) { selection.clear() }
+    if (showSelectionDelete && selection.active) {
+        val recoverable = selTrashEnabled && com.dot.gallery.core.util.SdkCompat.supportsTrash &&
+            selection.selected.values.none { it.relativePath.startsWith("cloud/") }
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showSelectionDelete = false },
+            title = {
+                Text(stringResource(
+                    if (recoverable) R.string.album_trash_confirm_title
+                    else R.string.album_delete_confirm_title
+                ))
+            },
+            text = {
+                Text(stringResource(
+                    if (recoverable) R.string.album_trash_confirm_summary
+                    else R.string.album_delete_confirm_summary
+                ))
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    val list = selection.selected.values.toList()
+                    showSelectionDelete = false
+                    selection.clear()
+                    onMoveAlbumsToTrash(selectionTrashResult, list)
+                }) {
+                    Text(stringResource(
+                        if (recoverable) R.string.action_move_to_trash
+                        else R.string.action_delete_permanently
+                    ))
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showSelectionDelete = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+    CompositionLocalProvider(
+        com.dot.gallery.feature_node.presentation.albums.components.LocalAlbumSelection provides selection
+    ) {
     Scaffold(
         modifier = Modifier
             .padding(horizontalInsets)
             .consumeWindowInsets(horizontalInsets),
         topBar = {
-            MainSearchBar(
-                isScrolling = isScrolling,
-                sharedTransitionScope = sharedTransitionScope,
-                animatedContentScope = animatedContentScope,
-                menuItems = { TimelineNavActions() },
-            )
+            if (selection.active) {
+                com.dot.gallery.feature_node.presentation.albums.components.AlbumSelectionBar(
+                    selection = selection,
+                    onDelete = { showSelectionDelete = true }
+                )
+            } else {
+                MainSearchBar(
+                    isScrolling = isScrolling,
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedContentScope = animatedContentScope,
+                    menuItems = { TimelineNavActions() },
+                )
+            }
         }
     ) { innerPaddingValues ->
         // hazeSource stays attached in every content state so the search bar keeps its
@@ -997,6 +1052,7 @@ fun AlbumsScreen(
         }
     }
 }
+    }
 }
 
 /**

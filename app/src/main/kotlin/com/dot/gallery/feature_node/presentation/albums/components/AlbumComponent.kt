@@ -120,6 +120,14 @@ fun AlbumComponent(
 ) {
     val scope = rememberCoroutineScope()
     val appBottomSheetState = rememberAppBottomSheetState()
+    val albumSel = LocalAlbumSelection.current
+    androidx.compose.runtime.LaunchedEffect(albumSel?.sheetAlbum) {
+        if (albumSel?.sheetAlbum?.id == album.id) {
+            albumSel!!.sheetAlbum = null
+            albumSel.clear()
+            appBottomSheetState.show()
+        }
+    }
     Column(
         modifier = modifier
             .alpha(if (isEnabled) 1f else 0.4f)
@@ -159,6 +167,7 @@ fun AlbumComponent(
                     }
                 } else null
             )
+            AlbumSelectionOverlay(album)
             if (album.isOnSdcard) {
                 Icon(
                     modifier = Modifier
@@ -286,6 +295,14 @@ fun AlbumRowComponent(
 ) {
     val scope = rememberCoroutineScope()
     val appBottomSheetState = rememberAppBottomSheetState()
+    val albumSel = LocalAlbumSelection.current
+    androidx.compose.runtime.LaunchedEffect(albumSel?.sheetAlbum) {
+        if (albumSel?.sheetAlbum?.id == album.id) {
+            albumSel!!.sheetAlbum = null
+            albumSel.clear()
+            appBottomSheetState.show()
+        }
+    }
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -295,8 +312,12 @@ fun AlbumRowComponent(
             .clip(Shapes.large)
             .combinedClickable(
                 enabled = isEnabled,
-                onClick = { onItemClick(album) },
-                onLongClick = if (onTogglePinClick != null) {
+                onClick = {
+                    if (albumSel != null && albumSel.active) albumSel.toggle(album) else onItemClick(album)
+                },
+                onLongClick = if (albumSel != null && onTogglePinClick != null) {
+                    { albumSel.toggle(album) }
+                } else if (onTogglePinClick != null) {
                     {
                         scope.launch {
                             appBottomSheetState.show()
@@ -337,6 +358,7 @@ fun AlbumRowComponent(
                     }
                 } else null
             )
+            AlbumSelectionOverlay(album)
             if (album.isOnSdcard) {
                 Icon(
                     modifier = Modifier
@@ -766,6 +788,12 @@ fun AlbumImage(
     onItemClick: (Album) -> Unit,
     onItemLongClick: ((Album) -> Unit)?
 ) {
+    val sel = LocalAlbumSelection.current
+    val selectable = sel != null && album.id != -200L
+    val onItemClick: (Album) -> Unit =
+        if (selectable && sel!!.active) ({ sel.toggle(it) }) else onItemClick
+    val onItemLongClick: ((Album) -> Unit)? =
+        if (selectable && onItemLongClick != null) ({ sel!!.toggle(it) }) else onItemLongClick
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed = interactionSource.collectIsPressedAsState()
     val cornerRadius by animateDpAsState(
