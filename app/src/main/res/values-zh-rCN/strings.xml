@@ -767,7 +767,7 @@
     <!-- Album Sections -->
     <string name="album_sections_title">分区排列相册</string>
     <string name="album_sections_summary">自动将相册分类为“常用”、“应用”及其他带有标题的分区</string>
-    <string name="section_common">常用</string>
+    <string name="section_common">普通</string>
     <string name="section_apps">应用</string>
     <string name="section_other">其他</string>
     <string name="create_section">创建分区</string>

@@ -170,8 +170,8 @@ object Settings {
                 albumCellsList.indexOf(
                     GridCells.Fixed(
                         when (windowSizeClass?.widthSizeClass) {
-                            WindowWidthSizeClass.Expanded -> 5
-                            else -> 2
+                            WindowWidthSizeClass.Expanded -> 3
+                            else -> 3
                         }
                     )
                 )
@@ -251,7 +251,7 @@ object Settings {
 
         @Composable
         fun rememberAlbumSectionsEnabled() =
-            rememberPreference(key = ALBUM_SECTIONS_ENABLED, defaultValue = false)
+            rememberPreference(key = ALBUM_SECTIONS_ENABLED, defaultValue = true)
 
         val PINNED_ALBUMS_AS_GRID = booleanPreferencesKey("pinned_albums_as_grid")
 
