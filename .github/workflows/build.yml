@@ -26,6 +26,10 @@ jobs:
           echo "OFFLINE=true" >> ./app.properties
       - name: Generate signing key
         run: keytool -genkeypair -keystore app/release_key.jks -alias key -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=refra"
+      - name: Build native codecs
+        uses: ./.github/actions/build-native-libs
+        with:
+          arch: Arm64-v8a
       - name: Build arm64 release APK
         run: ./gradlew --build-cache :app:assembleArm64-v8aNoMLRelease
         env:
